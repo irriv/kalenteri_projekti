@@ -26,6 +26,8 @@ public:
 private slots:
     void on_calendarWidget_clicked(const QDate &date);
 
+    void on_listWidget_itemClicked(QListWidgetItem *item);
+
     void on_editButton_clicked();
 
     void on_deleteButton_clicked();
@@ -36,16 +38,12 @@ private slots:
 
     void on_cancelButton_clicked();
 
-    void on_listWidget_itemClicked(QListWidgetItem *item);
-
 private:
-    void clear_text_browser();
-    void add_entry(QDate date, QString qstring);
-    void navigate_to_calendar();
     bool create_confirmation_message(std::string text);
     void write_to_file();
     void read_file();
     json construct_json();
+    void closeEvent (QCloseEvent *event);
 
     Ui::Calendar *ui;
     std::map<QDate,std::string> data;

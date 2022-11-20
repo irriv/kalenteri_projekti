@@ -23,15 +23,24 @@ void Calendar::on_calendarWidget_clicked(const QDate &date)
 {
     const auto &it = data.find(date);
     if(it != data.end()){
-        ui->textBrowser->setText(QString::fromStdString(it->second));
         ui->listWidget->setCurrentItem(ui->listWidget->findItems(it->first.toString("dd.MM.yyyy"), Qt::MatchExactly).at(0));
+        ui->textBrowser->setText(QString::fromStdString(it->second));
         ui->deleteButton->setEnabled(true);
     }
     else{
-        clear_text_browser();
+        ui->textBrowser->clear();
         ui->listWidget->clearSelection();
         ui->deleteButton->setDisabled(true);
     }
+}
+
+
+void Calendar::on_listWidget_itemClicked(QListWidgetItem *item)
+{
+    const auto &it = data.find(QDate::fromString(item->text(), "dd.MM.yyyy"));
+    ui->calendarWidget->setSelectedDate(it->first);
+    ui->textBrowser->setText(QString::fromStdString(it->second));
+    ui->deleteButton->setEnabled(true);
 }
 
 
@@ -39,7 +48,6 @@ void Calendar::on_editButton_clicked()
 {
     ui->dateLabel->setText("Now editing: " + ui->calendarWidget->selectedDate().toString("dd.MM.yyyy"));
     const auto &it = data.find(ui->calendarWidget->selectedDate());
-    ui->stackedWidget->setCurrentIndex(1);
     ui->plainTextEdit->setFocus();
     if(it != data.end()){
         ui->plainTextEdit->setPlainText(QString::fromStdString(it->second));
@@ -50,30 +58,25 @@ void Calendar::on_editButton_clicked()
     else{
         ui->plainTextEdit->clear();
     }
+    ui->stackedWidget->setCurrentIndex(1);
 }
 
 
 void Calendar::on_deleteButton_clicked()
 {
-    if(create_confirmation_message("Are you sure you want to delete the contents?")){
-        const auto &it = data.find(ui->calendarWidget->selectedDate());
-        if(it != data.end()){
-            ui->listWidget->takeItem(ui->listWidget->currentRow());
-            data.erase(it);
-            clear_text_browser();
-            write_to_file();
-            ui->deleteButton->setDisabled(true);
-        }
+    if(create_confirmation_message("Are you sure you want to delete\nthe contents of " + ui->calendarWidget->selectedDate().toString("dd.MM.yyyy").toStdString() + "?")){
+        ui->listWidget->takeItem(ui->listWidget->currentRow());
+        ui->listWidget->clearSelection();
+        data.erase(data.find(ui->calendarWidget->selectedDate()));
+        ui->textBrowser->clear();
+        ui->deleteButton->setDisabled(true);
     }
 }
 
 
 void Calendar::on_quitButton_clicked()
 {
-    if(create_confirmation_message("Are you sure you want to close the application?")){
-        write_to_file();
-        close();
-    }
+    close();
 }
 
 
@@ -81,47 +84,29 @@ void Calendar::on_saveButton_clicked()
 {
     const QString &qstring = ui->plainTextEdit->toPlainText();
     if(qstring.isEmpty()){
-        navigate_to_calendar();
+        ui->stackedWidget->setCurrentIndex(0);
+        return;
     }
     const QDate &date = ui->calendarWidget->selectedDate();
     const auto &it = data.find(date);
     if(it != data.end()){
         data.erase(it);
     }
-    add_entry(date, qstring);
-    write_to_file();
+    data.insert(std::pair<QDate,std::string>(date,qstring.toStdString()));
+    ui->listWidget->clear();
+    for(auto it = data.rbegin(); it != data.rend(); it++){
+        ui->listWidget->addItem(it->first.toString("dd.MM.yyyy"));
+    }
     emit ui->calendarWidget->clicked(date);
-    navigate_to_calendar();
+    ui->stackedWidget->setCurrentIndex(0);
 }
 
 
 void Calendar::on_cancelButton_clicked()
 {
-    if(create_confirmation_message("Are you sure you want to cancel?")){
-        navigate_to_calendar();
+    if(create_confirmation_message("Are you sure you want to cancel\nediting the contents of " + ui->calendarWidget->selectedDate().toString("dd.MM.yyyy").toStdString() + "?")){
+        ui->stackedWidget->setCurrentIndex(0);
     }
-}
-
-
-void Calendar::clear_text_browser(){
-    ui->textBrowser->clear();
-}
-
-
-void Calendar::add_entry(QDate date, QString qstring)
-{
-    data.insert(std::pair<QDate,std::string>(date,qstring.toStdString()));
-    // Lazy sort
-    ui->listWidget->clear();
-    for(const auto& pair : data){
-        ui->listWidget->addItem(pair.first.toString("dd.MM.yyyy"));
-    }
-}
-
-
-void Calendar::navigate_to_calendar()
-{
-    ui->stackedWidget->setCurrentIndex(0);
 }
 
 
@@ -137,18 +122,14 @@ bool Calendar::create_confirmation_message(std::string text)
 
 void Calendar::write_to_file()
 {
-    const json &object = construct_json();
     if(auto fs = std::ofstream(DATAFILE)){
             try{
-                std::string content = object.dump(4);
+                std::string content = construct_json().dump();
                 fs.write(content.data(), content.size());
-                std::cout << "File written." << std::endl;
             }  catch (const std::exception& e){
-                std::cout << "An exception occurred when writing to file: " << e.what() << std::endl;
             }
         }
         else{
-            std::cout << "Failed writing file." << std::endl;
     }
 }
 
@@ -159,15 +140,16 @@ void Calendar::read_file()
             try{
                 json object = json::parse(fs);
                 for(const auto &pair : object){
-                    add_entry(QDate::fromString(QString::fromStdString(pair.front()),"dd.MM.yyyy"), QString::fromStdString(pair.back()));
+                    data.insert(std::pair<QDate,std::string>(QDate::fromString(QString::fromStdString(pair.front()),"dd.MM.yyyy"),pair.back()));
                 }
-                std::cout << "File read." << std::endl;
+                for(auto it = data.rbegin(); it != data.rend(); it++){
+                    ui->listWidget->addItem(it->first.toString("dd.MM.yyyy"));
+                }
+                std::cout << "bro???" << std::endl;
             }  catch (const std::exception& e){
-                std::cout << "An exception occurred when reading file: " << e.what() << std::endl;
             }
         }
         else{
-            std::cout << "Failed reading file." << std::endl;
         }
 }
 
@@ -182,20 +164,8 @@ json Calendar::construct_json()
 }
 
 
-void Calendar::on_listWidget_itemClicked(QListWidgetItem *item)
+void Calendar::closeEvent(QCloseEvent *event)
 {
-    const QDate &date = QDate::fromString(item->text(), "dd.MM.yyyy");
-    const auto &it = data.find(date);
-    if(it != data.end()){
-        ui->calendarWidget->setSelectedDate(date);
-        ui->textBrowser->setText(QString::fromStdString(it->second));
-        ui->deleteButton->setEnabled(true);
-    }
-    else{
-        clear_text_browser();
-        ui->listWidget->clearSelection();
-        ui->deleteButton->setDisabled(true);
-    }
-
+    write_to_file();
+    event->accept();
 }
-
