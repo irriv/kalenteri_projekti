@@ -6,7 +6,6 @@
 #include <map>
 #include "libs/nlohmann/json.hpp"
 #include <fstream>
-#include <iostream>
 #include <QListWidgetItem>
 
 using json = nlohmann::json;

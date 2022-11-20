@@ -145,7 +145,6 @@ void Calendar::read_file()
                 for(auto it = data.rbegin(); it != data.rend(); it++){
                     ui->listWidget->addItem(it->first.toString("dd.MM.yyyy"));
                 }
-                std::cout << "bro???" << std::endl;
             }  catch (const std::exception& e){
             }
         }
