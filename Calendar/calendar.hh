@@ -4,6 +4,11 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <map>
+#include "libs/nlohmann/json.hpp"
+#include <fstream>
+#include <iostream>
+
+using json = nlohmann::json;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Calendar; }
@@ -35,6 +40,9 @@ private:
     void add_entry(QDate date, QString qstring);
     void navigate_to_calendar();
     bool create_confirmation_message(std::string text);
+    void write_to_file();
+    void read_file();
+    json construct_json();
 
     Ui::Calendar *ui;
     std::map<QDate,std::string> data;
