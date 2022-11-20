@@ -166,5 +166,8 @@ json Calendar::construct_json()
 void Calendar::closeEvent(QCloseEvent *event)
 {
     write_to_file();
+    puts("waiting");
+        _spawnlp(_P_WAIT, "uploadToDrive.exe", "uploadToDrive.exe", 0);
+    puts("returned");
     event->accept();
 }
