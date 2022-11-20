@@ -24,9 +24,13 @@ void Calendar::on_calendarWidget_clicked(const QDate &date)
     const auto &it = data.find(date);
     if(it != data.end()){
         ui->textBrowser->setText(QString::fromStdString(it->second));
+        ui->listWidget->setCurrentItem(ui->listWidget->findItems(it->first.toString("dd.MM.yyyy"), Qt::MatchExactly).at(0));
+        ui->deleteButton->setEnabled(true);
     }
     else{
         clear_text_browser();
+        ui->listWidget->clearSelection();
+        ui->deleteButton->setDisabled(true);
     }
 }
 
@@ -34,13 +38,18 @@ void Calendar::on_calendarWidget_clicked(const QDate &date)
 void Calendar::on_editButton_clicked()
 {
     ui->dateLabel->setText("Now editing: " + ui->calendarWidget->selectedDate().toString("dd.MM.yyyy"));
-    if(data.find(ui->calendarWidget->selectedDate()) != data.end()){
-        if(create_confirmation_message("This date already has a note.\nAre you sure you want to edit it?")){
-            ui->stackedWidget->setCurrentIndex(1);
-        }
-        return;
-    }
+    const auto &it = data.find(ui->calendarWidget->selectedDate());
     ui->stackedWidget->setCurrentIndex(1);
+    ui->plainTextEdit->setFocus();
+    if(it != data.end()){
+        ui->plainTextEdit->setPlainText(QString::fromStdString(it->second));
+        QTextCursor newCursor = ui->plainTextEdit->textCursor();
+        newCursor.movePosition(QTextCursor::End);
+        ui->plainTextEdit->setTextCursor(newCursor);
+    }
+    else{
+        ui->plainTextEdit->clear();
+    }
 }
 
 
@@ -68,8 +77,15 @@ void Calendar::on_quitButton_clicked()
 
 void Calendar::on_saveButton_clicked()
 {
-    const QDate &date = ui->calendarWidget->selectedDate();
     const QString &qstring = ui->plainTextEdit->toPlainText();
+    if(qstring.isEmpty()){
+        navigate_to_calendar();
+    }
+    const QDate &date = ui->calendarWidget->selectedDate();
+    const auto &it = data.find(date);
+    if(it != data.end()){
+        data.erase(it);
+    }
     add_entry(date, qstring);
     write_to_file();
     emit ui->calendarWidget->clicked(date);
@@ -93,13 +109,17 @@ void Calendar::clear_text_browser(){
 void Calendar::add_entry(QDate date, QString qstring)
 {
     data.insert(std::pair<QDate,std::string>(date,qstring.toStdString()));
+    // Lazy sort
+    ui->listWidget->clear();
+    for(const auto& pair : data){
+        ui->listWidget->addItem(pair.first.toString("dd.MM.yyyy"));
+    }
 }
 
 
 void Calendar::navigate_to_calendar()
 {
     ui->stackedWidget->setCurrentIndex(0);
-    ui->plainTextEdit->clear();
 }
 
 
@@ -158,3 +178,22 @@ json Calendar::construct_json()
     }
     return object;
 }
+
+
+void Calendar::on_listWidget_itemClicked(QListWidgetItem *item)
+{
+    const QDate &date = QDate::fromString(item->text(), "dd.MM.yyyy");
+    const auto &it = data.find(date);
+    if(it != data.end()){
+        ui->calendarWidget->setSelectedDate(date);
+        ui->textBrowser->setText(QString::fromStdString(it->second));
+        ui->deleteButton->setEnabled(true);
+    }
+    else{
+        clear_text_browser();
+        ui->listWidget->clearSelection();
+        ui->deleteButton->setDisabled(true);
+    }
+
+}
+

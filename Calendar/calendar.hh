@@ -7,6 +7,7 @@
 #include "libs/nlohmann/json.hpp"
 #include <fstream>
 #include <iostream>
+#include <QListWidgetItem>
 
 using json = nlohmann::json;
 
@@ -34,6 +35,8 @@ private slots:
     void on_saveButton_clicked();
 
     void on_cancelButton_clicked();
+
+    void on_listWidget_itemClicked(QListWidgetItem *item);
 
 private:
     void clear_text_browser();
