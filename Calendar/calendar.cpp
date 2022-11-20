@@ -83,10 +83,6 @@ void Calendar::on_quitButton_clicked()
 void Calendar::on_saveButton_clicked()
 {
     const QString &qstring = ui->plainTextEdit->toPlainText();
-    if(qstring.isEmpty()){
-        ui->stackedWidget->setCurrentIndex(0);
-        return;
-    }
     const QDate &date = ui->calendarWidget->selectedDate();
     const auto &it = data.find(date);
     if(it != data.end()){
