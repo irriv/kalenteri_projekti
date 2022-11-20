@@ -58,9 +58,11 @@ void Calendar::on_deleteButton_clicked()
     if(create_confirmation_message("Are you sure you want to delete the contents?")){
         const auto &it = data.find(ui->calendarWidget->selectedDate());
         if(it != data.end()){
+            ui->listWidget->takeItem(ui->listWidget->currentRow());
             data.erase(it);
             clear_text_browser();
             write_to_file();
+            ui->deleteButton->setDisabled(true);
         }
     }
 }
