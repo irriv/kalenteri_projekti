@@ -3,13 +3,13 @@
 
 const std::string &DATAFILE = "calendarData.json";
 
-
 Calendar::Calendar(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Calendar)
 {
     ui->setupUi(this);
     read_file();
+    ui->calendarWidget->setMinimumDate(*new QDate(1, 1, 1));
     emit ui->calendarWidget->clicked(QDate::currentDate());
 }
 
@@ -21,6 +21,10 @@ Calendar::~Calendar()
 
 void Calendar::on_calendarWidget_clicked(const QDate &date)
 {
+    if(date < ui->calendarWidget->minimumDate()){
+        emit ui->calendarWidget->clicked(ui->calendarWidget->minimumDate());
+        return;
+    }
     const auto &it = data.find(date);
     if(it != data.end()){
         ui->listWidget->setCurrentItem(ui->listWidget->findItems(it->first.toString("dd.MM.yyyy"), Qt::MatchExactly).at(0));
