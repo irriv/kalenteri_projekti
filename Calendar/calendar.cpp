@@ -80,7 +80,9 @@ void Calendar::on_deleteButton_clicked()
 
 void Calendar::on_quitButton_clicked()
 {
-    close();
+    if(create_confirmation_message("Close the application?")){
+        close();
+    }
 }
 
 
