@@ -1,5 +1,8 @@
-# kalenteri_projekti
+# Calendar with Cloud
 This is a simple calendar program where the user can make notes. 
+
+<img width="802" height="632" alt="calendar_image" src="https://github.com/user-attachments/assets/c357aa73-b606-4a66-85ca-19a45f75b4e5" />
+
 These notes are written to 'calendarData.json' file in the program's folder. 
 This json file can be uploaded to Google Drive.
 
